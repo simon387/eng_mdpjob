@@ -12,6 +12,7 @@ import it.csi.mdpjob.dto.FdrItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Serial;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -200,7 +201,7 @@ public class PagopaFdrRestClient {
 				// Errori 4xx: permanenti, inutile ritentare
 				int statusCode = response.statusCode ();
 				if ( statusCode >= 400 && statusCode < 500 ) {
-					String motivo = descriviErrore4xx ( statusCode, response.body () );
+					var motivo = descriviErrore4xx ( statusCode, response.body () );
 					throw new NonRetryableException ( "HTTP " + statusCode + " per URL: " + url + " - " + motivo + " - body: " + response.body () );
 				}
 
@@ -243,7 +244,7 @@ public class PagopaFdrRestClient {
 
 	/** Eccezione che segnala un errore 4xx non ritentabile. */
 	private static class NonRetryableException extends Exception {
-		private static final long serialVersionUID = 1L;
+		@Serial private static final long serialVersionUID = 1L;
 
 		public NonRetryableException ( String message ) {
 			super ( message );

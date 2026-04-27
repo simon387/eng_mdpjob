@@ -6,7 +6,7 @@ ALTER TABLE flusso_riversamento
     ADD COLUMN jsonflusso text;
 
 COMMENT
-ON COLUMN flusso_riversamento.jsonflusso IS 'Flusso di rendicontazione in formato JSON, acquisito dal nuovo batch INMDJB110';
+    ON COLUMN flusso_riversamento.jsonflusso IS 'Flusso di rendicontazione in formato JSON, acquisito dal nuovo batch INMDJB110';
 
 
 --
@@ -28,11 +28,11 @@ CREATE TABLE tracciatura_acquisizione_flusso
 );
 
 COMMENT
-ON TABLE tracciatura_acquisizione_flusso IS 'Tracciatura acquisizione flussi di rendicontazione dal nuovo batch INMDJB110';
+    ON TABLE tracciatura_acquisizione_flusso IS 'Tracciatura acquisizione flussi di rendicontazione dal nuovo batch INMDJB110';
 COMMENT
-ON COLUMN tracciatura_acquisizione_flusso.stato IS 'DA_ELABORARE, ELABORATO, SCARTATO';
+    ON COLUMN tracciatura_acquisizione_flusso.stato IS 'DA_ELABORARE, ELABORATO, SCARTATO';
 COMMENT
-ON COLUMN tracciatura_acquisizione_flusso.revision IS 'Versione/revisione del flusso pagoPA';
+    ON COLUMN tracciatura_acquisizione_flusso.revision IS 'Versione/revisione del flusso pagoPA';
 
 CREATE SEQUENCE tracciatura_acquisizione_flusso_id_seq;
 
@@ -51,8 +51,8 @@ CREATE TABLE tracciatura_singola_acquisizione
 (
     id            integer   not null constraint tracciatura_singola_acquisizione_pk primary key,
     id_flusso     integer   not null constraint fk_tracciatura_singola_acquisizione_flusso
-            references tracciatura_acquisizione_flusso
-            on update restrict on delete restrict,
+        references tracciatura_acquisizione_flusso
+        on update restrict on delete restrict,
     num_pagamenti integer,
     data_inizio   timestamp not null,
     data_fine     timestamp,
@@ -62,13 +62,13 @@ CREATE TABLE tracciatura_singola_acquisizione
 );
 
 COMMENT
-ON TABLE tracciatura_singola_acquisizione IS 'Tracciatura acquisizione pagamenti per singolo flusso - batch INMDJB110';
+    ON TABLE tracciatura_singola_acquisizione IS 'Tracciatura acquisizione pagamenti per singolo flusso - batch INMDJB110';
 COMMENT
-ON COLUMN tracciatura_singola_acquisizione.esito IS 'OK o KO';
+    ON COLUMN tracciatura_singola_acquisizione.esito IS 'OK o KO';
 COMMENT
-ON COLUMN tracciatura_singola_acquisizione.response IS 'Response JSON completa (JSON_TESTATA+JSON_PAYMENTS) in caso di scarto';
+    ON COLUMN tracciatura_singola_acquisizione.response IS 'Response JSON completa (JSON_TESTATA+JSON_PAYMENTS) in caso di scarto';
 COMMENT
-ON COLUMN tracciatura_singola_acquisizione.num_pagamenti IS 'Somma dei count pagamenti dichiarati da pagoPA';
+    ON COLUMN tracciatura_singola_acquisizione.num_pagamenti IS 'Somma dei count pagamenti dichiarati da pagoPA';
 
 CREATE SEQUENCE tracciatura_singola_acquisizione_id_seq;
 
