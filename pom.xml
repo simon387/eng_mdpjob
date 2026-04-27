@@ -1,0 +1,228 @@
+<?xml version="1.0"?>
+<!--
+* SPDX-FileCopyrightText: (C) Copyright 2023 Regione Piemonte
+*
+* SPDX-License-Identifier: EUPL-1.2
+-->
+<!--suppress MavenModelInspection, VulnerableLibrariesLocal -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>it.csi.mdpjob</groupId>
+	<artifactId>mdpjob</artifactId>
+	<version>1.0.0</version>
+	<name>mdpjob</name>
+
+	<properties>
+		<maven.compiler.source>17</maven.compiler.source>
+		<maven.compiler.target>17</maven.compiler.target>
+	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>2.17.0</version> <!-- o l'ultima disponibile -->
+		</dependency>
+		<dependency>
+			<groupId>org.apache.wss4j</groupId>
+			<artifactId>wss4j-ws-security-common</artifactId>
+			<version>2.4.0</version> <!-- o ultima disponibile -->
+		</dependency>
+		<dependency><!-- TODO FORSE NON USATA; CHECK-->
+			<groupId>commons-lang</groupId>
+			<artifactId>commons-lang</artifactId>
+			<version>2.6</version>
+		</dependency>
+		<!--		<dependency org="csipiemonte" name="mdpnew-internal" rev="1.0.0">-->
+		<!--			<artifact name="mdpnodospcclient-fruitore-client-1.0.0" type="jar" />-->
+		<!--		</dependency>-->
+		<dependency>
+			<groupId>mdpnodospcclient-fruitore-client</groupId>
+			<artifactId>mdpnodospcclient-fruitore-client-1.0.0</artifactId>
+			<version>1.0.0</version>
+		</dependency>
+		<!-- claude -->
+		<dependency>
+			<groupId>commons-codec</groupId>
+			<artifactId>commons-codec</artifactId>
+			<version>1.15</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.cxf</groupId>
+			<artifactId>cxf-rt-frontend-jaxws</artifactId>
+			<version>3.5.5</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.cxf</groupId>
+			<artifactId>cxf-rt-transports-http</artifactId>
+			<version>3.5.5</version>
+		</dependency>
+		<dependency><!-- dovrebbe risolvere il driver -->
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
+			<version>42.7.3</version>
+		</dependency>
+		<!-- PER I LOGS - SLF4J API (probabilmente già transitiva, ma meglio esplicitarla) -->
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>2.0.13</version>
+		</dependency>
+		<!-- PER I LOGS - Logback come implementazione -->
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-classic</artifactId>
+			<version>1.5.6</version>
+		</dependency>
+		<!-- PER I LOGS - Encoder JSON per Logback -->
+		<dependency>
+			<groupId>net.logstash.logback</groupId>
+			<artifactId>logstash-logback-encoder</artifactId>
+			<version>7.4</version>
+		</dependency>
+		<!-- per ora locale -->
+		<dependency>
+			<groupId>riconciliazione-flussi-ext</groupId>
+			<artifactId>riconciliazione-flussi-ext</artifactId>
+			<version>1.0.0</version>
+			<scope>system</scope>
+			<systemPath>${project.basedir}/lib/riconciliazione-flussi-ext.jar</systemPath>
+		</dependency>
+		<!-- per ora locale -->
+		<dependency>
+			<groupId>pagamenti</groupId>
+			<artifactId>pagamenti</artifactId>
+			<version>1.0.0</version>
+			<scope>system</scope>
+			<systemPath>${project.basedir}/lib/pagamenti.jar</systemPath>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<!--Gestione PlaceHolder #START#	-->
+		<filters>
+  	      <filter>${project.basedir}/profiles/${env}.properties</filter>
+	    </filters>
+	
+	    <resources>
+	      <resource>
+	        <directory>src/main/resources</directory>
+	        <filtering>true</filtering>
+	      </resource>
+	    </resources>
+	   <!--Gestione PlaceHolder #END#	-->
+		<plugins>
+			<plugin>
+		      <artifactId>maven-resources-plugin</artifactId>
+		      <version>3.3.1</version>
+		      <configuration>
+		        <delimiters>
+		          <delimiter>@</delimiter>
+		        </delimiters>
+		        <useDefaultDelimiters>false</useDefaultDelimiters>
+		      </configuration>
+		    </plugin>
+			<!-- 1. Compiler -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.11.0</version>
+			</plugin>
+
+			<!-- 2. Jar thin: niente dipendenze dentro, ma MANIFEST con Class-Path -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>3.3.0</version>
+				<configuration>
+					<archive>
+						<manifest>
+							<mainClass>it.csi.mdpjob.MainINMDJB110</mainClass>
+							<!-- genera il Class-Path: lib/pippo.jar lib/pluto.jar ... -->
+							<addClasspath>true</addClasspath>
+							<classpathPrefix>lib/</classpathPrefix>
+						</manifest>
+					</archive>
+					<finalName>mdpjob</finalName>
+					<excludes>  <!-- niente config dentro il jar -->
+						<exclude>**/*.xml</exclude>
+						<exclude>**/*.properties</exclude>
+						<exclude>**/*.txt</exclude>
+					</excludes>
+				</configuration>
+			</plugin>
+
+			<!-- 3. Copia tutte le dipendenze in target/lib -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<version>3.6.1</version>
+				<executions>
+					<execution>
+						<id>copy-deps</id>
+						<phase>package</phase>
+						<goals>
+							<goal>copy-dependencies</goal>
+						</goals>
+						<configuration>
+							<outputDirectory>${project.build.directory}/lib</outputDirectory>
+							<includeScope>runtime</includeScope>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+			<!-- 4. Assembly: produce il tar con la struttura voluta -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<version>3.6.0</version>
+				<executions>
+					<execution>
+						<id>make-tar</id>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+						<configuration>
+							<finalName>mdpjob-1.0.0</finalName>
+							<appendAssemblyId>false</appendAssemblyId>
+							<descriptors>
+								<descriptor>src/assembly/tar_config.xml</descriptor>
+							</descriptors>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+		</plugins>
+	</build>
+	<!--ATTENZIONE SE NON SPECIFICATO ALCUN PROFILO PRENDE DI DEFAULT QUELLO DI TEST-->
+	<profiles>
+	  <profile>
+	    <id>local</id>
+	    <properties><env>local</env></properties>
+	  </profile>
+	  <profile>
+	    <id>dev-int-01</id>
+	    <properties><env>dev-int-01</env></properties>
+	  </profile>
+	  <profile>
+	    <id>test-int-01</id>
+	    <activation>
+	      <activeByDefault>true</activeByDefault>
+	    </activation>
+	    <properties><env>test-int-01</env></properties>
+	  </profile>
+	  <profile>
+	    <id>prod-int-01</id>
+	    <properties><env>prod-int-01</env></properties>
+	  </profile>
+	</profiles>
+
+</project>

@@ -1,0 +1,8 @@
+### prova chiamata principale a pagopa
+### ma 0 flussi trovati
+GET {{baseURL}}fdr-org/service/v1/organizations/{{regione_piemonte}}/fdrs?page=1&size=1000
+Ocp-Apim-Subscription-Key: {{sk}}
+
+### qua ci dovrebbero essere 2 flussi (by Alessandra)
+GET {{baseURL}}fdr-org/service/v1/organizations/00514490010/fdrs
+Ocp-Apim-Subscription-Key: {{sk}}

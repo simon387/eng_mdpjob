@@ -1,0 +1,31 @@
+<configuration>
+
+	<!-- ── Appender JSON su file ──────────────────────────────────────── -->
+	<appender name="FILE_JSON" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>log/mdpjob.log</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<!-- un file al giorno, 30 giorni di storico, max 500 MB totali -->
+			<fileNamePattern>log/mdpjob.%d{yyyy-MM-dd}.log.gz</fileNamePattern>
+			<maxHistory>30</maxHistory>
+			<totalSizeCap>500MB</totalSizeCap>
+		</rollingPolicy>
+		<encoder class="net.logstash.logback.encoder.LogstashEncoder"/>
+	</appender>
+
+	<!-- ── Appender console (plain, solo in dev) ─────────────────────── -->
+	<appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder>
+			<pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+		</encoder>
+	</appender>
+
+	<!-- ── Root logger ───────────────────────────────────────────────── -->
+	<root level="INFO">
+		<appender-ref ref="FILE_JSON"/>
+		<appender-ref ref="CONSOLE"/>
+	</root>
+
+	<!-- Riduci il rumore di CXF se vuoi -->
+	<logger name="org.apache.cxf" level="WARN"/>
+
+</configuration>

@@ -1,0 +1,40 @@
+// public int executeUpdate () throws Exception {return executeUpdate ( false );}
+
+	//public int executeUpdate() throws SQLException, NamingException, Exception {
+	public int executeUpdate ( boolean generateKey ) throws Exception {
+		var METHOD_NAME = "executeUpdate";
+		log.info ( "{} - dao: {}", METHOD_NAME, super.getClass ().getSimpleName () );
+
+		Connection conn = null;
+		PreparedStatement stmt = null;
+		try {
+			conn = ConnectionManagerFactory.getInstance ().getConnection ();
+			var sql = componiQuery ();
+			stmt = conn.prepareStatement ( sql, Statement.RETURN_GENERATED_KEYS );
+			log.info ( "{} - map statement params...", METHOD_NAME );
+			log.info ( "{} - parametri {}", METHOD_NAME, statementMapper.mapStatementParameters ( stmt ) );
+
+			log.info ( "{} - start execute query: {}", METHOD_NAME, sql );
+
+			var result = stmt.executeUpdate ();
+			var rs = stmt.getGeneratedKeys ();
+			if ( generateKey && rs.next () ) {
+				// Retrieve the auto generated key(s).
+				result = rs.getInt ( 1 );
+			}
+			log.info ( "{} - returning result: {}", METHOD_NAME, result );
+			return result;
+
+		} catch ( SQLException e ) {
+			log.error ( "{} - SQLException ", METHOD_NAME, e );
+			return -1;
+		} catch ( NamingException e ) {
+			log.error ( "{} - NamingException", METHOD_NAME, e );
+			throw e;
+		} catch ( Exception e ) {
+			log.error ( "{} - Exception", METHOD_NAME, e );
+			throw e;
+		} finally {
+			ConnectionManager.closeConnection ( conn, stmt );
+		}
+	}

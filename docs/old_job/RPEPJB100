@@ -1,0 +1,62 @@
+PROP_DIR=$APP_DIR/config
+CLASS_PATH=$PROP_DIR:$APP_LIB
+
+STDOUT_LOG_DIR=/skedul/progetti/epay-rp-01/dati/log
+DAYS=2
+DAYS_BEFORE_DELETE=60
+
+LOCKFILENAME=$SCRIPT.lock
+ret=`ls -la $WRK_PROG_INPUT | grep $LOCKFILENAME | wc -l`
+echo Numero lock file presenti: $ret
+if [ $ret -eq 0 ]
+then
+        echo Creazione file di lock ed inizio elaborazione... $WRK_PROG_INPUT/$LOCKFILENAME
+        touch $WRK_PROG_INPUT/$LOCKFILENAME #creazione file di log
+
+
+        echo Esecuzione Java Attivazione motore di riconciliazione
+        echo $JAVA_HOME/bin/java -classpath ${CLASS_PATH} it.csi.epay.epayjob.launcher.AttivaElaborazione -s ${SERVER} -u user -p password
+
+        $JAVA_HOME/bin/java -classpath ${CLASS_PATH} it.csi.epay.epayjob.launcher.AttivaElaborazione -s ${SERVER} -u user -p password
+        r_cond=`echo $?` #chiamata e avvio della classe java
+
+        echo "Compressione file di log STDOUT prodotti dal crontab"
+        files=($(find $STDOUT_LOG_DIR -mtime +"$DAYS" -print | grep "RPEPJB100_" |grep -v .gz))
+        for files in ${files[*]}
+        do
+         echo $files
+         gzip $files
+         r_cond=`echo $?`
+         if [ $r_cond -ne 0 ]
+         then
+          rm -f $WRK_PROG_INPUT/$LOCKFILENAME
+          echo "File di lock eliminato prima di uscita per abend su gzip"
+          exit 0
+         fi
+        done
+
+        echo "Cancellazione dei file di log più vecchi di 2 mesi"
+        files_to_delete=($(find $STDOUT_LOG_DIR -mtime +"$DAYS_BEFORE_DELETE" -print |grep "RPEPJB100_" |grep ".gz"))  #ricerca di tutti gli zip con file di log più vecchi di 60 giorni (2 mesi)
+        for file_to_delete in ${files_to_delete[*]} #scorro l'array dei files trovati
+        do
+         echo $file_to_delete #stampa elenco dei files trovati file per file
+                  rm -f $file_to_delete #cancellazione del file
+        done
+        echo "file cancellati con successo"
+
+        if [[ $r_cond -ne 0 ]];         then
+
+            rm -f $WRK_PROG_INPUT/$LOCKFILENAME
+            echo File di lock eliminato prima di uscita per abend
+            exit $r_cond
+        fi
+
+
+        echo Fine esecuzione Java RPEPJB100
+
+        rm -f $WRK_PROG_INPUT/$LOCKFILENAME
+        echo File di lock eliminato
+else
+        echo SCRIPT GIA IN ESECUZIONE!!!!
+                echo -e "subject: Lock attivo su Job RPEPJB100\n\nDETAIL : Lock file has not been removed - SCRIPT GIA IN ESECUZIONE!!!!" | sendmail -t 'artan.bora@eng.it'
+fi

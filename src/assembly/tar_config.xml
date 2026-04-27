@@ -1,0 +1,66 @@
+<!--
+* SPDX-FileCopyrightText: (C) Copyright 2023 Regione Piemonte
+*
+* SPDX-License-Identifier: EUPL-1.2
+-->
+
+<!--suppress XmlHighlighting -->
+<assembly
+		xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2
+                      http://maven.apache.org/xsd/assembly-1.1.2.xsd">
+
+	<id>bundle</id>
+	<formats>
+		<format>tar</format>
+	</formats>
+	<includeBaseDirectory>false</includeBaseDirectory>
+
+	<!-- ── lib: il jar del progetto ── -->
+	<files>
+		<file>
+			<source>${project.build.directory}/mdpjob.jar</source>
+			<outputDirectory>mdpnew-int-01/mdpjob/lib</outputDirectory>  <!-- ① rinominato -->
+		</file>
+	</files>
+
+	<fileSets>
+
+		<!-- ── lib: le dipendenze ── -->
+		<fileSet>
+			<directory>${project.build.directory}/lib</directory>
+			<outputDirectory>mdpnew-int-01/mdpjob/lib</outputDirectory>  <!-- ① rinominato -->
+			<includes>
+				<include>*.jar</include>
+			</includes>
+		</fileSet>
+
+		<!-- ── config: solo i file di resources, senza .class, senza META-INF ── -->
+		<fileSet>
+			<directory>${project.build.directory}/classes</directory>
+			<outputDirectory>mdpnew-int-01/mdpjob/config</outputDirectory>  <!-- ① rinominato -->
+			<excludes>
+				<exclude>**/*.class</exclude>
+				<exclude>it/**</exclude>
+				<exclude>META-INF/**</exclude>  <!-- escludi META-INF -->
+			</excludes>
+		</fileSet>
+
+		<!-- ── log: cartella vuota forzata con un .gitkeep ── -->
+		<fileSet>
+			<directory>${basedir}/src/assembly/log-placeholder</directory>  <!-- vedi sotto -->
+			<outputDirectory>mdpnew-int-01/mdpjob/log</outputDirectory>  <!-- rinominato -->
+		</fileSet>
+
+		<fileSet>
+			<directory>${basedir}/src/assembly/log-placeholder</directory>
+			<outputDirectory>mdpnew-int-01/mdpjob/log</outputDirectory>
+			<excludes>
+				<exclude>.gitkeep</exclude>  <!-- non includere il placeholder -->
+			</excludes>
+		</fileSet>
+
+	</fileSets>
+
+</assembly>

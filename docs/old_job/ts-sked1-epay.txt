@@ -1,0 +1,11 @@
+beehive ssh nodes connect ts-sked1-epay.site03.nivolapiemonte.it
+
+-
+
+crontab -l
+
+HOME="/skedul"
+0 19 * * * /skedul/procsked/procscript/RPEPJB100 >> /skedul/progetti/epay-rp-01/dati/log/RPEPJB100_`date +\%Y\%m\%d`.log
+#0 7-15 * * * /skedul/procsked/procscript/RPEPJB100 >> /skedul/progetti/epay-rp-01/dati/log/RPEPJB100_`date +\%Y\%m\%d`.log
+# Chef Name: epayshell_cron_configuration_RPEPJB600_ts-sked1-epay.site03.nivolapiemonte.it
+MAILTO="assistenza.epay@csi.it"

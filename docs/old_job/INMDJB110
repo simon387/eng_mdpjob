@@ -1,0 +1,41 @@
+LOCKFILENAME=$SCRIPT.lock
+ret=`ls -la $WRK_PROG_INPUT | grep $LOCKFILENAME | wc -l`
+ECHO Numero lock file presenti: $ret
+if [ $ret -eq 0 ]
+then
+	ECHO Creazione file di lock ed inizio elaborazione... $WRK_PROG_INPUT/$LOCKFILENAME
+	touch $WRK_PROG_INPUT/$LOCKFILENAME
+
+	
+	ECHO Esecuzione Java mdpetl Flussi rencontazione
+	
+	$JAVA_HOME/bin/java -Djavax.net.ssl.trustStore=$TRUSTEDCASTORE \
+                -Djavax.net.ssl.trustStorePassword=$TRUSTEDCASTOREPASSWORD \
+                -Djavax.net.ssl.keyStore=$PRIVATEKEYSTORE \
+                -Djavax.net.ssl.keyStorePassword=$PRIVATEKEYSTOREPASSWORD \
+                -Dhttp.proxyHost=proxy-srv.csi.it \
+                -Dhttp.proxyPort=3128 \
+                -Dhttps.proxyHost=proxy-srv.csi.it \
+                -Dhttps.proxyPort=3128 \
+                -Dhttp.nonProxyHosts=$PROXYEXCLUSIONS \
+                -classpath ${CLASS_PATH} it.csi.mdp.mdpetl.MainFlussiRendicontazione $AZIONE $AZIONE_SINGOLO_FLUSSO $NUMERO_RETRY
+
+	r_cond=`echo $?`
+	if [ $r_cond -ne 0 ]
+	   then  
+	    rm -f $WRK_PROG_INPUT/$LOCKFILENAME
+ 	    ECHO File di lock eliminato prima di uscita per abend
+	    COND $r_cond EXIT 
+  	fi
+	          
+ 
+        
+	ECHO Fine esecuzione Java INMDJB100 
+
+	rm -f $WRK_PROG_INPUT/$LOCKFILENAME
+	ECHO File di lock eliminato
+else
+	echo SCRIPT GIA IN ESECUZIONE!!!!
+fi
+
+END

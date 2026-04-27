@@ -1,0 +1,99 @@
+ # Il file config.yml definisce i comportamenti che la pipeline deve adottare sul codice sorgente
+# e sulle unità di installazione per tutte le fasi del rilascio, dalla build al deployment.
+# L'elenco dei valori ammessi e gli esempi di compilazione sono disponibili al link: 
+
+# [OBBLIGATORIO]
+# indica in minuscolo il nome del prodotto
+productName: mdpnew
+
+# [OBBLIGATORIO]
+# indica in minuscolo il nome della componente
+componentName: mdpjob
+
+# [OBBLIGATORIO]
+# indica il comportamento da adottare relativamente ai diversi stage della pipeline.
+# Alcuni di questi comportamenti possono essere sovrascritti dalla chiamata di una
+# pipeline di rilascio dell'intero prodotto
+stages:
+  build: yes
+  postbuild_test: no
+  provision: no
+  deploy: no
+  postdeploy_test: no
+  postdeploy: no
+
+# [OBBLIGATORIO]
+build:
+  # [OBBLIGATORIO]
+  # Se la componente genera più unità di installazione indica se i processi di build di più unità
+  # di installazione, possono essere parallelizzati o eseguiti in sequenza
+  # inserire sequential oppure parallel
+  buildFlow: sequential
+
+  # [OBBLIGATORIO]
+  # indica il tipo di tool da utilizzare per la build della componente
+  buildTool: maven
+
+  # [OBBLIGATORIO]
+  # indica la versione del tool di build da utilizzare
+  buildToolVersion: maven_3_8_1
+
+  # [OBBLIGATORIO]
+  # indica l'environment di compilazione da utilizzare
+  buildEnvironment: jdk_adoptium_temurin_17_0_8_1
+
+  # [OPZIONALE]
+  # mappa che definisce le opzioni di build da apporre al comando, es: -D[property]=[value]
+  buildOptionString: "clean -P${environment}-${linea_cliente} package"
+
+  # [OPZIONALE]
+  # mappa che definisce le opzioni di build da apporre al comando es: RepartMaven2GlobalSettings
+  mavenSettings: RepartMaven2GlobalSettings
+
+# [OPZIONALE]
+# Se si desidera copiare uno o più artefatti archiviati in Jenkins da altri progetti,
+# indica la lista dei path relativi di diversi workspace dove recuperarli
+jobsToCopyFromList: 
+
+# [OPZIONALE]
+# Se si desidera archiviare a propria volta in Jenkins i propri artefatti
+# così da renderli disponibili ad altri progetti Jenkins,
+# indica il lor path relativo nel proprio workspace 
+targetDir: 
+
+# [OPZIONALE]
+# indica la lista degli artefatti da archiviare, anche con regexp.
+artifactsToArchive: 
+
+# [OBBLIGATORIO]
+# indica lo strumento di code review che si vuole adottare.
+codeReviewer: 
+  sonar:
+    node_executable_path: node_14_21_1
+
+# [OBBLIGATORIO]
+# indica il comportamento da adottare relativamente alle diverse fasi di test.
+# Per ciascuna è possibile indicare se eseguirla e quale strumento utilizzare
+test:
+  postBuild:
+    unitTest:
+      active: no
+      tech: junit
+  postDeploy:
+    apiTest:
+      active: no
+      tech: soapui
+    uiTest:
+      active: no
+      tech: selenium
+
+# [OBBLIGATORIO]
+# indica la lista delle unità di installazione derivate dalla build della componente
+builds_to_execute:
+
+  # [OBBLIGATORIO]
+  # indica il nome dell'unità di installazione, priva di versione ed estensione
+  mdpjob:
+    # [OBBLIGATORIO]
+    # indica il path relativo nel workspace dove sono creati i pacchetti da caricare su Artifactory
+    artifactsToPublish: "target/*.tar"
