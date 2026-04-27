@@ -23,6 +23,8 @@ import java.util.List;
 public class ElaborazioneFlussiRendicontazioneRest {
 
 	private static final Logger log = LoggerFactory.getLogger ( ElaborazioneFlussiRendicontazioneRest.class );
+	private static final String LOG_ESITO_FLUSSO =
+					"Esito flusso - orgId={} fdr={} rev={} pspId={} idTracciatura={} idSingola={} stato={} esito={} motivo={}";
 
 	private final ObjectMapper objectMapper = new ObjectMapper ();
 
@@ -80,6 +82,7 @@ public class ElaborazioneFlussiRendicontazioneRest {
 
 		if ( giaPresenteConJson ) {
 			log.info ( "{} - Flusso {} rev {} gia' presente con jsonflusso, salto.", METHOD, fdr, revision );
+			logEsitoFlusso ( organizationId, fdr, revision, pspId, null, null, "SKIPPED", "SKIPPED", "gia_presente_con_jsonflusso" );
 			return false;
 		}
 
@@ -96,8 +99,11 @@ public class ElaborazioneFlussiRendicontazioneRest {
 			dettaglio = client.getSingleFdr ( organizationId, fdr, revision, pspId );
 		} catch ( Exception e ) {
 			log.error ( "Errore GET dettaglio flusso {}", fdr, e );
-			tracciatureDAO.aggiornaStato ( idTracciatura, InserisciTracciaturAcquisizioneFlussoDAO.STATO_SCARTATO, "Errore chiamata getSingleFdr: " + e.getMessage () );
-			singolaDAO.aggiorna ( idSingola, "KO", null, e.getMessage () );
+			var nota = "Errore chiamata getSingleFdr: " + e.getMessage ();
+			tracciatureDAO.aggiornaStato ( idTracciatura, InserisciTracciaturAcquisizioneFlussoDAO.STATO_SCARTATO, nota );
+			singolaDAO.aggiorna ( idSingola, "KO", null, nota );
+			logEsitoFlusso ( organizationId, fdr, revision, pspId, idTracciatura, idSingola,
+							InserisciTracciaturAcquisizioneFlussoDAO.STATO_SCARTATO, "KO", nota );
 			return true;
 		}
 
@@ -107,6 +113,8 @@ public class ElaborazioneFlussiRendicontazioneRest {
 			log.info ( "{} - flusso: {}", nota, fdr );
 			tracciatureDAO.aggiornaStato ( idTracciatura, InserisciTracciaturAcquisizioneFlussoDAO.STATO_SCARTATO, nota );
 			singolaDAO.aggiorna ( idSingola, "KO", null, nota );
+			logEsitoFlusso ( organizationId, fdr, revision, pspId, idTracciatura, idSingola,
+							InserisciTracciaturAcquisizioneFlussoDAO.STATO_SCARTATO, "KO", nota );
 			return false;
 		}
 
@@ -120,11 +128,10 @@ public class ElaborazioneFlussiRendicontazioneRest {
 			log.info ( "{} - flusso: {}", nota, fdr );
 			tracciatureDAO.aggiornaStato ( idTracciatura, InserisciTracciaturAcquisizioneFlussoDAO.STATO_SCARTATO, nota );
 			singolaDAO.aggiorna ( idSingola, "KO", null, nota );
+			logEsitoFlusso ( organizationId, fdr, revision, pspId, idTracciatura, idSingola,
+							InserisciTracciaturAcquisizioneFlussoDAO.STATO_SCARTATO, "KO", nota );
 			return false;
 		}
-
-		// PASSO 11: aggiorna tracciatura con ELABORATO
-		tracciatureDAO.aggiornaStato ( idTracciatura, InserisciTracciaturAcquisizioneFlussoDAO.STATO_ELABORATO, null );
 
 		// PASSO 12-13: GET pagamenti con paginazione
 		PagopaFdrRestClient.PaymentsResponse paymentsResponse;
@@ -132,12 +139,15 @@ public class ElaborazioneFlussiRendicontazioneRest {
 			paymentsResponse = client.getAllPayments ( organizationId, fdr, revision, pspId );
 		} catch ( Exception e ) {
 			log.error ( "Errore GET pagamenti flusso {}", fdr, e );
-			singolaDAO.aggiorna ( idSingola, "KO", null, e.getMessage () );
+			var nota = "Errore chiamata getAllPayments: " + e.getMessage ();
+			tracciatureDAO.aggiornaStato ( idTracciatura, InserisciTracciaturAcquisizioneFlussoDAO.STATO_SCARTATO, nota );
+			singolaDAO.aggiorna ( idSingola, "KO", null, nota );
+			logEsitoFlusso ( organizationId, fdr, revision, pspId, idTracciatura, idSingola,
+							InserisciTracciaturAcquisizioneFlussoDAO.STATO_SCARTATO, "KO", nota );
 			return true;
 		}
 
-		singolaDAO.aggiorna ( idSingola, null, null, null ); // aggiorna num_pagamenti
-		new InserisciTracciaturaSingolaAcquisizioneDAO ().inserisci ( idTracciatura, paymentsResponse.countTotaleDichiarato () );
+		singolaDAO.aggiornaNumPagamenti ( idSingola, paymentsResponse.countTotaleDichiarato () );
 
 		// PASSO 14: costruisci JSON_TESTATA + JSON_PAYMENTS
 		var jsonFlusso = costruisciJsonFlusso ( dettaglio.getRawJson (), paymentsResponse.pagamenti () );
@@ -153,17 +163,53 @@ public class ElaborazioneFlussiRendicontazioneRest {
 							"calcolata=" + sommaPagamenti +
 							" sumPayments=" + dettaglio.getSumPayments ();
 			log.info ( "{} - flusso: {}", nota, fdr );
+			tracciatureDAO.aggiornaStato ( idTracciatura, InserisciTracciaturAcquisizioneFlussoDAO.STATO_SCARTATO, nota );
 			singolaDAO.aggiorna ( idSingola, "KO", jsonFlusso, nota );
+			logEsitoFlusso ( organizationId, fdr, revision, pspId, idTracciatura, idSingola,
+							InserisciTracciaturAcquisizioneFlussoDAO.STATO_SCARTATO, "KO", nota );
 			return false;
 		}
 
 		// PASSO 16-17: salva in flusso_riversamento e flusso_singolo_pagamento
-		salvaFlussoEPagamenti ( fdrItem, dettaglio, jsonFlusso, paymentsResponse.pagamenti (), key, organizationId );
+		try {
+			salvaFlussoEPagamenti ( fdrItem, dettaglio, jsonFlusso, paymentsResponse.pagamenti (), key, organizationId );
+		} catch ( Exception e ) {
+			var nota = "Errore salvataggio flusso/pagamenti: " + e.getMessage ();
+			tracciatureDAO.aggiornaStato ( idTracciatura, InserisciTracciaturAcquisizioneFlussoDAO.STATO_SCARTATO, nota );
+			singolaDAO.aggiorna ( idSingola, "KO", jsonFlusso, nota );
+			logEsitoFlusso ( organizationId, fdr, revision, pspId, idTracciatura, idSingola,
+							InserisciTracciaturAcquisizioneFlussoDAO.STATO_SCARTATO, "KO", nota );
+			throw e;
+		}
 
 		singolaDAO.aggiorna ( idSingola, "OK", null, null );
+		tracciatureDAO.aggiornaStato ( idTracciatura, InserisciTracciaturAcquisizioneFlussoDAO.STATO_ELABORATO, null );
+		logEsitoFlusso ( organizationId, fdr, revision, pspId, idTracciatura, idSingola,
+						InserisciTracciaturAcquisizioneFlussoDAO.STATO_ELABORATO, "OK", "elaborazione_completata" );
 
 		log.info ( "Flusso {} elaborato con successo.", fdr );
 		return false;
+	}
+
+	private void logEsitoFlusso ( String organizationId,
+							 String fdr,
+							 Integer revision,
+							 String pspId,
+							 Integer idTracciatura,
+							 Integer idSingola,
+							 String stato,
+							 String esito,
+							 String motivo ) {
+		log.info ( LOG_ESITO_FLUSSO,
+					organizationId,
+					fdr,
+					revision,
+					pspId,
+					idTracciatura,
+					idSingola,
+					stato,
+					esito,
+					motivo );
 	}
 
 	/**

@@ -74,4 +74,27 @@ public class InserisciTracciaturaSingolaAcquisizioneDAO {
 			ConnectionManager.closeConnection ( conn );
 		}
 	}
+
+	public void aggiornaNumPagamenti ( Integer id, Integer numPagamenti ) throws Exception {
+		Connection conn = null;
+		PreparedStatement stmt = null;
+		try {
+			conn = ConnectionManagerFactory.getInstance ().getConnection ();
+			stmt = conn.prepareStatement (
+							"UPDATE tracciatura_singola_acquisizione " +
+											"SET num_pagamenti = ? " +
+											"WHERE id = ?"
+			);
+			if ( numPagamenti != null ) {
+				stmt.setInt ( 1, numPagamenti );
+			} else {
+				stmt.setNull ( 1, Types.INTEGER );
+			}
+			stmt.setInt ( 2, id );
+			stmt.executeUpdate ();
+		} finally {
+			ConnectionManager.closeStatement ( stmt );
+			ConnectionManager.closeConnection ( conn );
+		}
+	}
 }
