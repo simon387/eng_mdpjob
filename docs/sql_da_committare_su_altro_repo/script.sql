@@ -1,3 +1,7 @@
+-- Sequence necessaria al nuovo batch INMDJB110 per generare gli ID di flusso_riversamento
+-- Da eseguire se non esiste già (es. DB locale/test dove la tabella è stata creata manualmente)
+CREATE SEQUENCE IF NOT EXISTS flusso_riversamento_id_seq;
+
 ALTER TABLE flusso_riversamento
     ADD COLUMN jsonflusso text;
 

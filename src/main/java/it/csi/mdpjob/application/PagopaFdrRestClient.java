@@ -196,9 +196,20 @@ public class PagopaFdrRestClient {
 				if ( response.statusCode () == 200 ) {
 					return objectMapper.readTree ( response.body () );
 				}
-				throw new Exception ( "HTTP " + response.statusCode () + " per URL: " + url + " - body: " + response.body () );
 
+				// Errori 4xx: permanenti, inutile ritentare
+				int statusCode = response.statusCode ();
+				if ( statusCode >= 400 && statusCode < 500 ) {
+					String motivo = descriviErrore4xx ( statusCode, response.body () );
+					throw new NonRetryableException ( "HTTP " + statusCode + " per URL: " + url + " - " + motivo + " - body: " + response.body () );
+				}
 
+				throw new Exception ( "HTTP " + statusCode + " per URL: " + url + " - body: " + response.body () );
+
+			} catch ( NonRetryableException e ) {
+				// Errore permanente (4xx): non ritentare, rilancia subito
+				log.warn ( "Errore non recuperabile (nessun retry): {}", e.getMessage () );
+				throw e;
 			} catch ( Exception e ) {
 				ultimaEccezione = e;
 				log.error ( "Tentativo {}/" + MAX_RETRY + " fallito per: {} - {}", i, url, e.getMessage () );
@@ -209,6 +220,34 @@ public class PagopaFdrRestClient {
 			}
 		}
 		throw new Exception ( "Tutti i " + MAX_RETRY + " tentativi falliti per: " + url, ultimaEccezione );
+	}
+
+	/**
+	 * Descrive in italiano il motivo di un errore 4xx per un log più parlante.
+	 */
+	private String descriviErrore4xx ( int statusCode, String body ) {
+		if ( statusCode == 403 ) {
+			return "Accesso negato dall'API gateway (ente non autorizzato per questa subscription key o non presente in ambiente PagoPA UAT)";
+		}
+		if ( statusCode == 400 ) {
+			if ( body != null && body.contains ( "FDR-2008" ) ) {
+				return "Ente non registrato nell'ambiente PagoPA (creditor institution invalid or unknown - FDR-2008): verificare che l'organizationId sia onboardato in UAT";
+			}
+			return "Richiesta non valida (400 Bad Request)";
+		}
+		if ( statusCode == 404 ) {
+			return "Risorsa non trovata (404 Not Found)";
+		}
+		return "Errore client HTTP " + statusCode;
+	}
+
+	/** Eccezione che segnala un errore 4xx non ritentabile. */
+	private static class NonRetryableException extends Exception {
+		private static final long serialVersionUID = 1L;
+
+		public NonRetryableException ( String message ) {
+			super ( message );
+		}
 	}
 
 	// --- Classi interne per le response aggregate ---
