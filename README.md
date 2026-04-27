@@ -20,6 +20,7 @@
 
 + ~~Produce target/mdpjob-1.0.0.jar eseguibile con: `java -jar target/mdpjob-1.0.0.jar arg0 arg1 arg2`~~
 + I tre transformer sono tutti necessari: il primo imposta il manifest con la main class, il secondo e il terzo servono per CXF che altrimenti a runtime non trova i suoi servizi interni e lancia eccezioni all'avvio del client SOAP.
++ aggiunti i profile, ricordarsi di usare .local su pc locale
 
 ### update
 

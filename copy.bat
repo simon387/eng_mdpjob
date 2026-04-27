@@ -9,6 +9,8 @@ set "toDir=C:\dev\eng_mdpjob"
 set "excludeFile=%TEMP%\xcopy_exclude.txt"
 echo .idea> "%excludeFile%"
 echo .git>> "%excludeFile%"
+echo target>> "%excludeFile%"
+echo log>> "%excludeFile%"
 
 :: Copy excluding .idea and .git (no quotes around exclude file path)
 xcopy /y /s /e /h "%srcDir%" "%toDir%" /EXCLUDE:%excludeFile%
