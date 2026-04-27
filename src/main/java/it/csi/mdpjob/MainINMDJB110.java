@@ -109,11 +109,11 @@ public class MainINMDJB110 {
 								key
 				);
 				if ( errore ) {
-					log.error ( "cicloElabora - Errori riscontrati per ente: {}", organizationId );
+					log.error ( "cicloElabora - Errori riscontrati per ente: {}", organizationId);
 					erroreGlobale = true;
 				}
 			} catch ( Exception e ) {
-				log.error ( "cicloElabora - Errore elaborazione ente {}", organizationId );
+				log.error ( "cicloElabora - Errore elaborazione ente {}", organizationId, e );
 				erroreGlobale = true;
 			}
 		}

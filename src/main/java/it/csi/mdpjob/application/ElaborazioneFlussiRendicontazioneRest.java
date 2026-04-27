@@ -51,15 +51,15 @@ public class ElaborazioneFlussiRendicontazioneRest {
 			// PASSO 6: elabora ogni singolo flusso
 			for ( var fdrItem : flussi ) {
 				try {
-					errore = errore | elaboraSingoloFlusso ( organizationId, fdrItem, client, key );
+					errore = errore || elaboraSingoloFlusso ( organizationId, fdrItem, client, key );
 				} catch ( Exception e ) {
-					log.error ( "Errore su flusso {}", fdrItem.getFdr () );
+					log.error ( "Errore su flusso {}", fdrItem.getFdr (), e );
 					errore = true;
 				}
 			}
 
 		} catch ( Exception e ) {
-			log.error ( "Errore generale per ente {}", organizationId );
+			log.error ( "Errore generale per ente {}", organizationId, e );
 			errore = true;
 		}
 
